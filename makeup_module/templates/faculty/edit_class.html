@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Class - Make-Up Class System{% endblock %}
+{% block page_title %}Edit Make-Up Class{% endblock %}
+
+{% block content %}
+<div class="edit-page">
+    <div class="page-header">
+        <a href="{{ url_for('faculty.class_detail', class_id=makeup_class.id) }}" class="back-link">
+            <i class="fas fa-arrow-left"></i> Back to Class
+        </a>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h3>Edit: {{ makeup_class.course_name }}</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('faculty.edit_class', class_id=makeup_class.id) }}" class="edit-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="form-section">
+                    <h4><i class="fas fa-book"></i> Course Details</h4>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="course_name">Course Name *</label>
+                            <input type="text" id="course_name" name="course_name" value="{{ makeup_class.course_name }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="course_code">Course Code</label>
+                            <input type="text" id="course_code" name="course_code" value="{{ makeup_class.course_code or '' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="section">Section *</label>
+                            <input type="text" id="section" name="section" value="{{ makeup_class.section }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="max_students">Max Students</label>
+                            <input type="number" id="max_students" name="max_students" value="{{ makeup_class.max_students }}" min="1">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h4><i class="fas fa-calendar-alt"></i> Schedule Details</h4>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Changing date or time will regenerate the remedial code
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="date">Date *</label>
+                            <input type="date" id="date" name="date" value="{{ makeup_class.date.strftime('%Y-%m-%d') }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="room">Room *</label>
+                            <input type="text" id="room" name="room" value="{{ makeup_class.room }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="start_time">Start Time *</label>
+                            <input type="time" id="start_time" name="start_time" value="{{ makeup_class.start_time.strftime('%H:%M') }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="end_time">End Time *</label>
+                            <input type="time" id="end_time" name="end_time" value="{{ makeup_class.end_time.strftime('%H:%M') }}" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h4><i class="fas fa-cog"></i> Settings</h4>
+                    
+                    <div class="form-group">
+                        <label for="reason">Reason</label>
+                        <textarea id="reason" name="reason" rows="3">{{ makeup_class.reason or '' }}</textarea>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="allow_late_entry" {% if makeup_class.allow_late_entry %}checked{% endif %}>
+                            <span class="checkmark"></span>
+                            Allow Late Entry
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <a href="{{ url_for('faculty.class_detail', class_id=makeup_class.id) }}" class="btn btn-outline">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

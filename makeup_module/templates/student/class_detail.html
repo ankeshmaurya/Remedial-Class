@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Class Details - Make-Up Class System{% endblock %}
+{% block page_title %}Class Details{% endblock %}
+
+{% block content %}
+<div class="class-detail-page student-view">
+    <div class="page-header">
+        <a href="{{ url_for('student.view_classes') }}" class="back-link">
+            <i class="fas fa-arrow-left"></i> Back to Classes
+        </a>
+    </div>
+    
+    <div class="detail-container">
+        <div class="class-detail-card">
+            <!-- Status Badge -->
+            {% if attendance %}
+            <div class="status-ribbon success">
+                <i class="fas fa-check"></i> Attended
+            </div>
+            {% endif %}
+            
+            <div class="class-header">
+                <div class="course-badge-large">
+                    {{ makeup_class.course_code or makeup_class.course_name[:3].upper() }}
+                </div>
+                <div class="class-title">
+                    <h1>{{ makeup_class.course_name }}</h1>
+                    <span class="badge badge-{{ 'success' if makeup_class.status == 'completed' else 'warning' if makeup_class.status == 'ongoing' else 'info' }}">
+                        {{ makeup_class.status.capitalize() }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="class-info-grid">
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="info-content">
+                        <label>Section</label>
+                        <span>{{ makeup_class.section }}</span>
+                    </div>
+                </div>
+                
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-calendar"></i>
+                    </div>
+                    <div class="info-content">
+                        <label>Date</label>
+                        <span>{{ makeup_class.date.strftime('%A, %B %d, %Y') }}</span>
+                    </div>
+                </div>
+                
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="info-content">
+                        <label>Time</label>
+                        <span>{{ makeup_class.start_time.strftime('%I:%M %p') }} - {{ makeup_class.end_time.strftime('%I:%M %p') }}</span>
+                    </div>
+                </div>
+                
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="info-content">
+                        <label>Room</label>
+                        <span>{{ makeup_class.room }}</span>
+                    </div>
+                </div>
+                
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <div class="info-content">
+                        <label>Faculty</label>
+                        <span>{{ faculty.name }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            {% if makeup_class.reason %}
+            <div class="reason-section">
+                <h3><i class="fas fa-info-circle"></i> About this Class</h3>
+                <p>{{ makeup_class.reason }}</p>
+            </div>
+            {% endif %}
+            
+            {% if attendance %}
+            <div class="attendance-status-section">
+                <h3><i class="fas fa-clipboard-check"></i> Your Attendance</h3>
+                <div class="attendance-info">
+                    <span class="badge badge-{{ 'success' if attendance.attendance_status == 'present' else 'warning' }} badge-lg">
+                        {{ attendance.attendance_status.capitalize() }}
+                    </span>
+                    <p>Marked at {{ attendance.timestamp.strftime('%I:%M:%S %p') }}</p>
+                </div>
+            </div>
+            {% elif makeup_class.status == 'ongoing' %}
+            <div class="action-section">
+                <a href="{{ url_for('student.mark_attendance') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-qrcode"></i> Mark Attendance Now
+                </a>
+                <p class="action-hint">Use the remedial code to mark your attendance</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

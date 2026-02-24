@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Dashboard - Make-Up Class System{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <!-- Welcome Section -->
+    <div class="welcome-card">
+        <div class="welcome-content">
+            <h2>Welcome back, {{ current_user.name }}! 👋</h2>
+            <p>Here's an overview of your make-up classes</p>
+        </div>
+        <a href="{{ url_for('faculty.schedule_class') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Schedule New Class
+        </a>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ total_classes }}</span>
+                <span class="stat-label">Total Classes</span>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon bg-success">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ upcoming_classes }}</span>
+                <span class="stat-label">Upcoming</span>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon bg-info">
+                <i class="fas fa-percentage"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ avg_attendance }}%</span>
+                <span class="stat-label">Avg Attendance</span>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon bg-warning">
+                <i class="fas fa-bell"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ notifications|length }}</span>
+                <span class="stat-label">Notifications</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="dashboard-grid">
+        <!-- Upcoming Classes -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-calendar-day"></i> Upcoming Classes</h3>
+                <a href="{{ url_for('faculty.view_classes') }}" class="btn btn-sm btn-outline">View All</a>
+            </div>
+            <div class="card-body">
+                {% if upcoming %}
+                <div class="class-list">
+                    {% for cls in upcoming %}
+                    <div class="class-item">
+                        <div class="class-date">
+                            <span class="day">{{ cls.date.strftime('%d') }}</span>
+                            <span class="month">{{ cls.date.strftime('%b') }}</span>
+                        </div>
+                        <div class="class-info">
+                            <h4>{{ cls.course_name }}</h4>
+                            <p>
+                                <i class="fas fa-clock"></i> {{ cls.start_time.strftime('%I:%M %p') }} - {{ cls.end_time.strftime('%I:%M %p') }}
+                                <i class="fas fa-map-marker-alt ms-2"></i> {{ cls.room }}
+                            </p>
+                            <div class="class-code">
+                                <span class="code-label">Code:</span>
+                                <span class="code-value">{{ cls.remedial_code }}</span>
+                                {% if cls.qr_code_path %}
+                                <button class="btn btn-sm btn-outline qr-btn" 
+                                        data-qr-src="{{ url_for('static', filename=cls.qr_code_path.replace('\\', '/').replace('static/', '')) }}"
+                                        data-course="{{ cls.course_name }}"
+                                        data-code="{{ cls.remedial_code }}"
+                                        onclick="showQRFromData(this)" title="View QR Code">
+                                    <i class="fas fa-qrcode"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="class-status">
+                            <span class="badge badge-{{ 'warning' if cls.status == 'ongoing' else 'info' }}">
+                                {{ cls.status.capitalize() }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-calendar-times"></i>
+                    <p>No upcoming classes</p>
+                    <a href="{{ url_for('faculty.schedule_class') }}" class="btn btn-primary btn-sm">Schedule Now</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- AI Predictions -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-brain"></i> Rush Predictions</h3>
+            </div>
+            <div class="card-body">
+                {% if rush_predictions %}
+                <div class="prediction-list">
+                    {% for pred in rush_predictions %}
+                    <div class="prediction-item">
+                        <div class="prediction-course">
+                            <h4>{{ pred.class.course_name }}</h4>
+                            <span class="date">{{ pred.class.date.strftime('%b %d') }}</span>
+                        </div>
+                        <div class="prediction-stats">
+                            <div class="rush-indicator rush-{{ pred.rush_level }}">
+                                <i class="fas {% if pred.rush_level == 'high' %}fa-exclamation-triangle{% elif pred.rush_level == 'medium' %}fa-minus-circle{% else %}fa-check-circle{% endif %}"></i>
+                                {{ pred.rush_level.capitalize() }} Rush
+                            </div>
+                            <span class="prediction-pct">~{{ pred.predicted_pct|round|int }}% expected</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-chart-line"></i>
+                    <p>No predictions available</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Recent Notifications -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-bell"></i> Recent Notifications</h3>
+                <a href="{{ url_for('faculty.notifications') }}" class="btn btn-sm btn-outline">View All</a>
+            </div>
+            <div class="card-body">
+                {% if notifications %}
+                <div class="notification-list">
+                    {% for notif in notifications %}
+                    <div class="notification-item {% if not notif.is_read %}unread{% endif %}">
+                        <div class="notification-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="notification-content">
+                            <h4>{{ notif.title }}</h4>
+                            <p>{{ notif.message[:80] }}...</p>
+                            <span class="notification-time">{{ notif.created_at.strftime('%b %d, %I:%M %p') }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-bell-slash"></i>
+                    <p>No new notifications</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+            </div>
+            <div class="card-body">
+                <div class="quick-actions">
+                    <a href="{{ url_for('faculty.schedule_class') }}" class="quick-action-btn">
+                        <i class="fas fa-calendar-plus"></i>
+                        <span>Schedule Class</span>
+                    </a>
+                    <a href="{{ url_for('faculty.view_classes') }}" class="quick-action-btn">
+                        <i class="fas fa-list-alt"></i>
+                        <span>View Classes</span>
+                    </a>
+                    <a href="{{ url_for('faculty.attendance') }}" class="quick-action-btn">
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>Attendance</span>
+                    </a>
+                    <a href="{{ url_for('faculty.reports') }}" class="quick-action-btn">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Reports</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QR Code Modal -->
+<div class="modal" id="qrModal">
+    <div class="modal-content qr-modal">
+        <div class="modal-header">
+            <h3 id="qrModalTitle">QR Code</h3>
+            <button class="modal-close" onclick="closeQRModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="qr-display">
+                <img id="qrImage" src="" alt="QR Code" class="qr-image-large">
+                <p class="qr-code-text" id="qrCodeText"></p>
+            </div>
+            <div class="qr-instructions">
+                <p><i class="fas fa-info-circle"></i> Students can scan this QR code to mark attendance</p>
+                <p><i class="fas fa-mobile-alt"></i> Works with any camera app - redirects to login if needed</p>
+            </div>
+            <div class="qr-actions">
+                <button class="btn btn-primary" onclick="downloadQR()">
+                    <i class="fas fa-download"></i> Download QR
+                </button>
+                <button class="btn btn-outline" onclick="printQR()">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.qr-btn {
+    margin-left: 8px;
+    padding: 4px 8px;
+}
+.qr-modal {
+    max-width: 400px;
+}
+.qr-display {
+    text-align: center;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+.qr-image-large {
+    max-width: 250px;
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.qr-code-text {
+    margin-top: 12px;
+    font-size: 1.25rem;
+    font-weight: 600;
+    font-family: monospace;
+    color: var(--primary-color);
+}
+.qr-instructions {
+    padding: 12px;
+    background: #e8f4fd;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+.qr-instructions p {
+    margin: 4px 0;
+    font-size: 0.875rem;
+    color: #1e40af;
+}
+.qr-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+</style>
+
+<script>
+let currentQRSrc = '';
+
+function showQRFromData(btn) {
+    showQRCode(btn.dataset.qrSrc, btn.dataset.course, btn.dataset.code);
+}
+
+function showQRCode(qrSrc, courseName, code) {
+    currentQRSrc = qrSrc;
+    document.getElementById('qrModalTitle').textContent = courseName + ' - QR Code';
+    document.getElementById('qrImage').src = qrSrc;
+    document.getElementById('qrCodeText').textContent = code;
+    document.getElementById('qrModal').classList.add('active');
+}
+
+function closeQRModal() {
+    document.getElementById('qrModal').classList.remove('active');
+}
+
+function downloadQR() {
+    const link = document.createElement('a');
+    link.href = currentQRSrc;
+    link.download = 'qr-code-' + document.getElementById('qrCodeText').textContent + '.png';
+    link.click();
+}
+
+function printQR() {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+        <head><title>QR Code - ${document.getElementById('qrModalTitle').textContent}</title></head>
+        <body style="text-align: center; padding: 40px;">
+            <h2>${document.getElementById('qrModalTitle').textContent}</h2>
+            <img src="${currentQRSrc}" style="max-width: 300px;">
+            <p style="font-size: 24px; font-family: monospace; margin-top: 20px;">${document.getElementById('qrCodeText').textContent}</p>
+            <p style="color: #666;">Scan this QR code to mark attendance</p>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+// Close modal on outside click
+document.getElementById('qrModal').addEventListener('click', function(e) {
+    if (e.target === this) closeQRModal();
+});
+</script>
+{% endblock %}

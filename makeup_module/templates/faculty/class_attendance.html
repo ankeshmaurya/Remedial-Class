@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Class Attendance - Make-Up Class System{% endblock %}
+{% block page_title %}Class Attendance{% endblock %}
+
+{% block content %}
+<div class="class-attendance-page">
+    <div class="page-header">
+        <a href="{{ url_for('faculty.attendance') }}" class="back-link">
+            <i class="fas fa-arrow-left"></i> Back to Attendance
+        </a>
+    </div>
+    
+    <!-- Class Info -->
+    <div class="class-info-banner">
+        <div class="info-left">
+            <h2>{{ makeup_class.course_name }}</h2>
+            <p>Section {{ makeup_class.section }} | {{ makeup_class.date.strftime('%B %d, %Y') }} | {{ makeup_class.start_time.strftime('%I:%M %p') }}</p>
+        </div>
+        <div class="info-right">
+            <a href="{{ url_for('faculty.export_attendance', class_id=makeup_class.id) }}" class="btn btn-primary">
+                <i class="fas fa-download"></i> Export CSV
+            </a>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ stats.total }}</span>
+                <span class="stat-label">Total Students</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-success">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ stats.present }}</span>
+                <span class="stat-label">Present</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-warning">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ stats.late }}</span>
+                <span class="stat-label">Late</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-info">
+                <i class="fas fa-percentage"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ stats.attendance_pct }}%</span>
+                <span class="stat-label">Attendance Rate</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="attendance-grid">
+        <!-- Attendance Chart -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-pie"></i> Attendance Distribution</h3>
+            </div>
+            <div class="card-body chart-container">
+                <canvas id="attendanceChart" data-stats="{{ [stats.present, stats.late, stats.absent]|tojson }}"></canvas>
+            </div>
+        </div>
+        
+        <!-- Attendance Table -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-list"></i> Student Records</h3>
+            </div>
+            <div class="card-body">
+                {% if attendances %}
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Student Name</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for att, name, email in attendances %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ name }}</td>
+                                <td>{{ email }}</td>
+                                <td>
+                                    <span class="badge badge-{{ 'success' if att.attendance_status == 'present' else 'warning' if att.attendance_status == 'late' else 'danger' }}">
+                                        {{ att.attendance_status.capitalize() }}
+                                    </span>
+                                </td>
+                                <td>{{ att.timestamp.strftime('%I:%M:%S %p') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state small">
+                    <i class="fas fa-user-clock"></i>
+                    <p>No attendance records yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Pie Chart
+const canvas = document.getElementById('attendanceChart');
+const chartData = JSON.parse(canvas.dataset.stats);
+const ctx = canvas.getContext('2d');
+new Chart(ctx, {
+    type: 'pie',
+    data: {
+        labels: ['Present', 'Late', 'Absent'],
+        datasets: [{
+            data: chartData,
+            backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 20
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

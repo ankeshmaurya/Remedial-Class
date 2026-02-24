@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Marked - Make-Up Class System{% endblock %}
+{% block page_title %}Attendance Confirmed{% endblock %}
+
+{% block content %}
+<div class="success-page">
+    <div class="success-container">
+        <div class="success-card">
+            <div class="success-animation">
+                <div class="checkmark-circle">
+                    <div class="checkmark"></div>
+                </div>
+            </div>
+            
+            <h1>Attendance Marked!</h1>
+            <p class="success-status">
+                {% if attendance.attendance_status == 'present' %}
+                <span class="badge badge-success">Present</span>
+                {% else %}
+                <span class="badge badge-warning">Late</span>
+                {% endif %}
+            </p>
+            
+            <div class="class-summary">
+                <div class="summary-item">
+                    <label>Course</label>
+                    <span>{{ makeup_class.course_name }}</span>
+                </div>
+                <div class="summary-item">
+                    <label>Section</label>
+                    <span>{{ makeup_class.section }}</span>
+                </div>
+                <div class="summary-item">
+                    <label>Date</label>
+                    <span>{{ makeup_class.date.strftime('%B %d, %Y') }}</span>
+                </div>
+                <div class="summary-item">
+                    <label>Time</label>
+                    <span>{{ attendance.timestamp.strftime('%I:%M:%S %p') }}</span>
+                </div>
+                <div class="summary-item">
+                    <label>Room</label>
+                    <span>{{ makeup_class.room }}</span>
+                </div>
+            </div>
+            
+            <div class="success-actions">
+                <a href="{{ url_for('student.dashboard') }}" class="btn btn-primary">
+                    <i class="fas fa-home"></i> Back to Dashboard
+                </a>
+                <a href="{{ url_for('student.attendance_history') }}" class="btn btn-outline">
+                    <i class="fas fa-history"></i> View History
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.success-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 70vh;
+}
+
+.success-card {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    text-align: center;
+    max-width: 450px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.success-animation {
+    margin-bottom: 24px;
+}
+
+.checkmark-circle {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    animation: scaleIn 0.5s ease-out;
+}
+
+.checkmark {
+    width: 40px;
+    height: 20px;
+    border-left: 4px solid white;
+    border-bottom: 4px solid white;
+    transform: rotate(-45deg);
+    animation: checkmark 0.3s ease-out 0.5s both;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes checkmark {
+    from {
+        width: 0;
+        height: 0;
+    }
+    to {
+        width: 40px;
+        height: 20px;
+    }
+}
+
+.success-card h1 {
+    color: #10B981;
+    margin-bottom: 8px;
+}
+
+.success-status {
+    margin-bottom: 24px;
+}
+
+.class-summary {
+    background: #F9FAFB;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.summary-item:last-child {
+    border-bottom: none;
+}
+
+.summary-item label {
+    color: #6B7280;
+    font-weight: 500;
+}
+
+.summary-item span {
+    color: #1F2937;
+    font-weight: 600;
+}
+
+.success-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+</style>
+{% endblock %}

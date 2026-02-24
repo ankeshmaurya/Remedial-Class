@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance History - Make-Up Class System{% endblock %}
+{% block page_title %}My Attendance History{% endblock %}
+
+{% block content %}
+<div class="history-page">
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ total }}</span>
+                <span class="stat-label">Total Classes</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-success">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ present }}</span>
+                <span class="stat-label">Present</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-warning">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ late }}</span>
+                <span class="stat-label">Late</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-info">
+                <i class="fas fa-percentage"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ attendance_pct }}%</span>
+                <span class="stat-label">Attendance Rate</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="history-grid">
+        <!-- Attendance Table -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-list"></i> Attendance Records</h3>
+            </div>
+            <div class="card-body">
+                {% if attendances %}
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Course</th>
+                                <th>Section</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                                <th>Marked At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for att in attendances %}
+                            <tr>
+                                <td>
+                                    <strong>{{ att.makeup_class.course_name }}</strong>
+                                    {% if att.makeup_class.course_code %}
+                                    <small>{{ att.makeup_class.course_code }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ att.makeup_class.section }}</td>
+                                <td>{{ att.makeup_class.date.strftime('%b %d, %Y') }}</td>
+                                <td>{{ att.makeup_class.start_time.strftime('%I:%M %p') }}</td>
+                                <td>
+                                    <span class="badge badge-{{ 'success' if att.attendance_status == 'present' else 'warning' }}">
+                                        {{ att.attendance_status.capitalize() }}
+                                    </span>
+                                </td>
+                                <td>{{ att.timestamp.strftime('%I:%M:%S %p') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-clipboard"></i>
+                    <h3>No Attendance Records</h3>
+                    <p>You haven't attended any make-up classes yet</p>
+                    <a href="{{ url_for('student.view_classes') }}" class="btn btn-primary">
+                        View Upcoming Classes
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Attendance Chart -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-pie"></i> Attendance Distribution</h3>
+            </div>
+            <div class="card-body chart-container">
+                <canvas id="attendanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Attendance Distribution Chart
+const ctx = document.getElementById('attendanceChart').getContext('2d');
+new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Present', 'Late'],
+        datasets: [{
+            data: [{{ present }}, {{ late }}],
+            backgroundColor: ['#10B981', '#F59E0B'],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

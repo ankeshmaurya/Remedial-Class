@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Class Details - Make-Up Class System{% endblock %}
+{% block page_title %}Class Details{% endblock %}
+
+{% block content %}
+<div class="class-detail-page">
+    <div class="page-header">
+        <a href="{{ url_for('faculty.view_classes') }}" class="back-link">
+            <i class="fas fa-arrow-left"></i> Back to Classes
+        </a>
+    </div>
+    
+    <div class="detail-grid">
+        <!-- Class Info Card -->
+        <div class="card class-info-card">
+            <div class="card-header">
+                <div class="class-title">
+                    <h2>{{ makeup_class.course_name }}</h2>
+                    <span class="badge badge-{{ 'success' if makeup_class.status == 'completed' else 'warning' if makeup_class.status == 'ongoing' else 'danger' if makeup_class.status == 'cancelled' else 'info' }}">
+                        {{ makeup_class.status.capitalize() }}
+                    </span>
+                </div>
+                {% if makeup_class.status not in ['completed', 'cancelled'] %}
+                <div class="card-actions">
+                    <a href="{{ url_for('faculty.edit_class', class_id=makeup_class.id) }}" class="btn btn-outline btn-sm">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label><i class="fas fa-hashtag"></i> Course Code</label>
+                        <span>{{ makeup_class.course_code or 'N/A' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label><i class="fas fa-users"></i> Section</label>
+                        <span>{{ makeup_class.section }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label><i class="fas fa-calendar"></i> Date</label>
+                        <span>{{ makeup_class.date.strftime('%B %d, %Y') }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label><i class="fas fa-clock"></i> Time</label>
+                        <span>{{ makeup_class.start_time.strftime('%I:%M %p') }} - {{ makeup_class.end_time.strftime('%I:%M %p') }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label><i class="fas fa-map-marker-alt"></i> Room</label>
+                        <span>{{ makeup_class.room }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label><i class="fas fa-user-friends"></i> Max Students</label>
+                        <span>{{ makeup_class.max_students }}</span>
+                    </div>
+                </div>
+                
+                {% if makeup_class.reason %}
+                <div class="reason-section">
+                    <label><i class="fas fa-comment-alt"></i> Reason</label>
+                    <p>{{ makeup_class.reason }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Remedial Code Card -->
+        <div class="card code-card">
+            <div class="card-header">
+                <h3><i class="fas fa-key"></i> Remedial Code</h3>
+            </div>
+            <div class="card-body">
+                <div class="code-display">
+                    <span class="code">{{ makeup_class.remedial_code }}</span>
+                    <button class="copy-btn" onclick="copyCode('{{ makeup_class.remedial_code }}')">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+                <div class="code-info">
+                    <p>
+                        <i class="fas fa-clock"></i>
+                        {% if makeup_class.is_code_valid() %}
+                        <span class="text-success">Valid until {{ makeup_class.code_expiry.strftime('%I:%M %p on %b %d') }}</span>
+                        {% else %}
+                        <span class="text-danger">Expired</span>
+                        {% endif %}
+                    </p>
+                </div>
+                
+                {% if makeup_class.qr_code_path %}
+                <div class="qr-section">
+                    <h4>QR Code</h4>
+                    <img src="{{ url_for('static', filename=makeup_class.qr_code_path.replace('\\', '/').replace('static/', '')) }}" alt="QR Code" class="qr-image">
+                    <p class="qr-hint">Students can scan this to mark attendance</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- AI Prediction Card -->
+        {% if makeup_class.predicted_attendance_pct %}
+        <div class="card prediction-card">
+            <div class="card-header">
+                <h3><i class="fas fa-brain"></i> AI Prediction</h3>
+            </div>
+            <div class="card-body">
+                <div class="prediction-display">
+                    <div class="prediction-stat">
+                        <span class="value">{{ makeup_class.predicted_attendance_pct|round|int }}%</span>
+                        <span class="label">Expected Attendance</span>
+                    </div>
+                    <div class="rush-level rush-{{ makeup_class.rush_level }}">
+                        <i class="fas {% if makeup_class.rush_level == 'high' %}fa-exclamation-triangle{% elif makeup_class.rush_level == 'medium' %}fa-minus-circle{% else %}fa-check-circle{% endif %}"></i>
+                        {{ makeup_class.rush_level.capitalize() }} Rush
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Attendance Stats Card -->
+        <div class="card attendance-card">
+            <div class="card-header">
+                <h3><i class="fas fa-clipboard-check"></i> Attendance Summary</h3>
+                {% if makeup_class.status in ['completed', 'ongoing'] %}
+                <a href="{{ url_for('faculty.export_attendance', class_id=makeup_class.id) }}" class="btn btn-sm btn-outline">
+                    <i class="fas fa-download"></i> Export
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <span class="stat-value">{{ stats.total }}</span>
+                        <span class="stat-label">Total</span>
+                    </div>
+                    <div class="stat-item text-success">
+                        <span class="stat-value">{{ stats.present }}</span>
+                        <span class="stat-label">Present</span>
+                    </div>
+                    <div class="stat-item text-warning">
+                        <span class="stat-value">{{ stats.late }}</span>
+                        <span class="stat-label">Late</span>
+                    </div>
+                    <div class="stat-item text-danger">
+                        <span class="stat-value">{{ stats.absent }}</span>
+                        <span class="stat-label">Absent</span>
+                    </div>
+                </div>
+                
+                <div class="attendance-chart">
+                    <canvas id="attendanceChart" data-stats="{{ [stats.present, stats.late, stats.absent]|tojson }}"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Attendance List -->
+        <div class="card attendance-list-card">
+            <div class="card-header">
+                <h3><i class="fas fa-list"></i> Attendance Records</h3>
+            </div>
+            <div class="card-body">
+                {% if attendances %}
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Status</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for att in attendances %}
+                            <tr>
+                                <td>{{ att.student.name }}</td>
+                                <td>
+                                    <span class="badge badge-{{ 'success' if att.attendance_status == 'present' else 'warning' if att.attendance_status == 'late' else 'danger' }}">
+                                        {{ att.attendance_status.capitalize() }}
+                                    </span>
+                                </td>
+                                <td>{{ att.timestamp.strftime('%I:%M %p') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state small">
+                    <i class="fas fa-user-clock"></i>
+                    <p>No attendance records yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyCode(code) {
+    navigator.clipboard.writeText(code).then(() => {
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification success';
+        toast.innerHTML = '<i class="fas fa-check"></i> Code copied!';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    });
+}
+
+// Attendance Chart
+const canvas = document.getElementById('attendanceChart');
+const chartData = JSON.parse(canvas.dataset.stats);
+const ctx = canvas.getContext('2d');
+new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Present', 'Late', 'Absent'],
+        datasets: [{
+            data: chartData,
+            backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

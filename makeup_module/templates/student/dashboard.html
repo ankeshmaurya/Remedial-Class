@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - Make-Up Class System{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard student-dashboard">
+    <!-- Welcome Section -->
+    <div class="welcome-card">
+        <div class="welcome-content">
+            <h2>Hello, {{ current_user.name }}! 👋</h2>
+            <p>Stay updated with upcoming make-up classes</p>
+        </div>
+        <a href="{{ url_for('student.mark_attendance') }}" class="btn btn-primary">
+            <i class="fas fa-qrcode"></i> Mark Attendance
+        </a>
+    </div>
+    
+    <!-- Quick Code Entry -->
+    <div class="card code-entry-card">
+        <div class="card-body">
+            <form action="{{ url_for('student.mark_attendance') }}" method="POST" class="quick-code-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="form-group">
+                    <label for="remedial_code">
+                        <i class="fas fa-key"></i> Enter Remedial Code
+                    </label>
+                    <div class="code-input-group">
+                        <input type="text" id="remedial_code" name="remedial_code" placeholder="e.g., MUP-9K3L2A" required maxlength="10" style="text-transform: uppercase;">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check"></i> Submit
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ attended_classes }}</span>
+                <span class="stat-label">Classes Attended</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-success">
+                <i class="fas fa-percentage"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ attendance_pct }}%</span>
+                <span class="stat-label">Attendance Rate</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-info">
+                <i class="fas fa-calendar"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ upcoming_classes|length }}</span>
+                <span class="stat-label">Upcoming Classes</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-warning">
+                <i class="fas fa-bell"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ unread_count }}</span>
+                <span class="stat-label">Notifications</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="dashboard-grid">
+        <!-- Upcoming Classes -->
+        <div class="card upcoming-classes-card">
+            <div class="card-header">
+                <h3><i class="fas fa-calendar-day"></i> Upcoming Make-Up Classes</h3>
+                <a href="{{ url_for('student.view_classes') }}" class="btn btn-sm btn-outline">View All</a>
+            </div>
+            <div class="card-body">
+                {% if upcoming_classes %}
+                <div class="class-grid">
+                    {% for cls in upcoming_classes %}
+                    <div class="class-card">
+                        <div class="class-card-header">
+                            <span class="course-badge">{{ cls.course_code or cls.course_name[:3].upper() }}</span>
+                            <span class="status-badge badge-{{ 'warning' if cls.status == 'ongoing' else 'info' }}">
+                                {{ cls.status.capitalize() }}
+                            </span>
+                        </div>
+                        <div class="class-card-body">
+                            <h4>{{ cls.course_name }}</h4>
+                            <p class="class-section">Section {{ cls.section }}</p>
+                            <div class="class-details">
+                                <span><i class="fas fa-calendar"></i> {{ cls.date.strftime('%b %d, %Y') }}</span>
+                                <span><i class="fas fa-clock"></i> {{ cls.start_time.strftime('%I:%M %p') }}</span>
+                                <span><i class="fas fa-map-marker-alt"></i> {{ cls.room }}</span>
+                            </div>
+                        </div>
+                        <div class="class-card-footer">
+                            <a href="{{ url_for('student.class_detail', class_id=cls.id) }}" class="btn btn-sm btn-outline">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-calendar-times"></i>
+                    <p>No upcoming make-up classes</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Recent Notifications -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-bell"></i> Recent Notifications</h3>
+                <a href="{{ url_for('student.notifications') }}" class="btn btn-sm btn-outline">View All</a>
+            </div>
+            <div class="card-body">
+                {% if notifications %}
+                <div class="notification-list">
+                    {% for notif in notifications %}
+                    <div class="notification-item {% if not notif.is_read %}unread{% endif %}">
+                        <div class="notification-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="notification-content">
+                            <h4>{{ notif.title }}</h4>
+                            <p>{{ notif.message[:60] }}...</p>
+                            <span class="notification-time">{{ notif.created_at.strftime('%b %d, %I:%M %p') }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state small">
+                    <i class="fas fa-bell-slash"></i>
+                    <p>No new notifications</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Attendance Summary Chart -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-pie"></i> Attendance Summary</h3>
+            </div>
+            <div class="card-body chart-container">
+                <canvas id="attendanceChart" data-attended="{{ attended_classes }}" data-missed="{{ total_available - attended_classes if total_available > attended_classes else 0 }}"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Attendance Chart
+const canvas = document.getElementById('attendanceChart');
+const attended = parseInt(canvas.dataset.attended) || 0;
+const missed = parseInt(canvas.dataset.missed) || 0;
+const ctx = canvas.getContext('2d');
+new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Attended', 'Missed'],
+        datasets: [{
+            data: [attended, missed],
+            backgroundColor: ['#10B981', '#E5E7EB'],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

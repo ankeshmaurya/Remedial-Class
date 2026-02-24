@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}My Classes - Make-Up Class System{% endblock %}
+{% block page_title %}My Make-Up Classes{% endblock %}
+
+{% block content %}
+<div class="classes-page">
+    <!-- Filters -->
+    <div class="filter-bar">
+        <form method="GET" action="{{ url_for('faculty.view_classes') }}" class="filter-form">
+            <div class="filter-group">
+                <label for="status">Status</label>
+                <select name="status" id="status" onchange="this.form.submit()">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+                    <option value="upcoming" {% if status_filter == 'upcoming' %}selected{% endif %}>Upcoming</option>
+                    <option value="ongoing" {% if status_filter == 'ongoing' %}selected{% endif %}>Ongoing</option>
+                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                    <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="course">Course</label>
+                <input type="text" name="course" id="course" value="{{ course_filter }}" placeholder="Search course...">
+            </div>
+            <div class="filter-group">
+                <label for="date">Date</label>
+                <input type="date" name="date" id="date" value="{{ date_filter }}">
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fas fa-filter"></i> Filter
+            </button>
+            <a href="{{ url_for('faculty.view_classes') }}" class="btn btn-outline btn-sm">
+                <i class="fas fa-times"></i> Clear
+            </a>
+        </form>
+        <a href="{{ url_for('faculty.schedule_class') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Schedule New
+        </a>
+    </div>
+    
+    <!-- Classes Table -->
+    <div class="card">
+        <div class="card-body">
+            {% if classes %}
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Course</th>
+                            <th>Section</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Room</th>
+                            <th>Code</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cls in classes %}
+                        <tr>
+                            <td>
+                                <div class="course-cell">
+                                    <strong>{{ cls.course_name }}</strong>
+                                    {% if cls.course_code %}
+                                    <small>{{ cls.course_code }}</small>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>{{ cls.section }}</td>
+                            <td>{{ cls.date.strftime('%b %d, %Y') }}</td>
+                            <td>{{ cls.start_time.strftime('%I:%M %p') }} - {{ cls.end_time.strftime('%I:%M %p') }}</td>
+                            <td>{{ cls.room }}</td>
+                            <td>
+                                <code class="remedial-code">{{ cls.remedial_code }}</code>
+                                <button class="copy-btn" onclick="copyCode('{{ cls.remedial_code }}')" title="Copy code">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                {% if cls.qr_code_path %}
+                                <button class="copy-btn" 
+                                        data-qr-src="{{ url_for('static', filename=cls.qr_code_path.replace('\\', '/').replace('static/', '')) }}"
+                                        data-course="{{ cls.course_name }}"
+                                        data-code="{{ cls.remedial_code }}"
+                                        onclick="showQRFromData(this)" title="View QR Code">
+                                    <i class="fas fa-qrcode"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ 'success' if cls.status == 'completed' else 'warning' if cls.status == 'ongoing' else 'danger' if cls.status == 'cancelled' else 'info' }}">
+                                    {{ cls.status.capitalize() }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="action-btns">
+                                    <a href="{{ url_for('faculty.class_detail', class_id=cls.id) }}" class="btn btn-sm btn-outline" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if cls.status not in ['completed', 'cancelled'] %}
+                                    <a href="{{ url_for('faculty.edit_class', class_id=cls.id) }}" class="btn btn-sm btn-outline" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="POST" action="{{ url_for('faculty.cancel_class', class_id=cls.id) }}" style="display: inline;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Cancel" onclick="return confirm('Are you sure you want to cancel this class?')">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    {% if cls.status in ['completed', 'ongoing'] %}
+                                    <a href="{{ url_for('faculty.export_attendance', class_id=cls.id) }}" class="btn btn-sm btn-outline" title="Export">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-calendar-times"></i>
+                <h3>No Classes Found</h3>
+                <p>{% if status_filter != 'all' or course_filter or date_filter %}No classes match your filters{% else %}You haven't scheduled any make-up classes yet{% endif %}</p>
+                <a href="{{ url_for('faculty.schedule_class') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Schedule Your First Class
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function copyCode(code) {
+    navigator.clipboard.writeText(code).then(() => {
+        // Show toast notification
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification success';
+        toast.innerHTML = '<i class="fas fa-check"></i> Code copied!';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    });
+}
+
+let currentQRSrc = '';
+
+function showQRFromData(btn) {
+    showQRCode(btn.dataset.qrSrc, btn.dataset.course, btn.dataset.code);
+}
+
+function showQRCode(qrSrc, courseName, code) {
+    currentQRSrc = qrSrc;
+    document.getElementById('qrModalTitle').textContent = courseName + ' - QR Code';
+    document.getElementById('qrImage').src = qrSrc;
+    document.getElementById('qrCodeText').textContent = code;
+    document.getElementById('qrModal').classList.add('active');
+}
+
+function closeQRModal() {
+    document.getElementById('qrModal').classList.remove('active');
+}
+
+function downloadQR() {
+    const link = document.createElement('a');
+    link.href = currentQRSrc;
+    link.download = 'qr-code-' + document.getElementById('qrCodeText').textContent + '.png';
+    link.click();
+}
+
+function printQR() {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+        <head><title>QR Code - ${document.getElementById('qrModalTitle').textContent}</title></head>
+        <body style="text-align: center; padding: 40px;">
+            <h2>${document.getElementById('qrModalTitle').textContent}</h2>
+            <img src="${currentQRSrc}" style="max-width: 300px;">
+            <p style="font-size: 24px; font-family: monospace; margin-top: 20px;">${document.getElementById('qrCodeText').textContent}</p>
+            <p style="color: #666;">Scan this QR code to mark attendance</p>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+// Close modal on outside click
+document.getElementById('qrModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeQRModal();
+});
+</script>
+
+<!-- QR Code Modal -->
+<div class="modal" id="qrModal">
+    <div class="modal-content qr-modal">
+        <div class="modal-header">
+            <h3 id="qrModalTitle">QR Code</h3>
+            <button class="modal-close" onclick="closeQRModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="qr-display">
+                <img id="qrImage" src="" alt="QR Code" class="qr-image-large">
+                <p class="qr-code-text" id="qrCodeText"></p>
+            </div>
+            <div class="qr-instructions">
+                <p><i class="fas fa-info-circle"></i> Students can scan this QR code to mark attendance</p>
+                <p><i class="fas fa-mobile-alt"></i> Works with any camera app - redirects to login if needed</p>
+            </div>
+            <div class="qr-actions">
+                <button class="btn btn-primary" onclick="downloadQR()">
+                    <i class="fas fa-download"></i> Download QR
+                </button>
+                <button class="btn btn-outline" onclick="printQR()">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.qr-modal {
+    max-width: 400px;
+}
+.qr-display {
+    text-align: center;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+.qr-image-large {
+    max-width: 250px;
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.qr-code-text {
+    margin-top: 12px;
+    font-size: 1.25rem;
+    font-weight: 600;
+    font-family: monospace;
+    color: var(--primary-color);
+}
+.qr-instructions {
+    padding: 12px;
+    background: #e8f4fd;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+.qr-instructions p {
+    margin: 4px 0;
+    font-size: 0.875rem;
+    color: #1e40af;
+}
+.qr-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+</style>
+{% endblock %}

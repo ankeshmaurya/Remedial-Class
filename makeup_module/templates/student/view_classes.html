@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Upcoming Classes - Make-Up Class System{% endblock %}
+{% block page_title %}Upcoming Make-Up Classes{% endblock %}
+
+{% block content %}
+<div class="classes-page student-classes">
+    <!-- Filters -->
+    <div class="filter-bar">
+        <form method="GET" action="{{ url_for('student.view_classes') }}" class="filter-form">
+            <div class="filter-group">
+                <label for="course">Course</label>
+                <input type="text" name="course" id="course" value="{{ course_filter }}" placeholder="Search by course...">
+            </div>
+            <div class="filter-group">
+                <label for="date">Date</label>
+                <input type="date" name="date" id="date" value="{{ date_filter }}">
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fas fa-filter"></i> Filter
+            </button>
+            <a href="{{ url_for('student.view_classes') }}" class="btn btn-outline btn-sm">
+                <i class="fas fa-times"></i> Clear
+            </a>
+        </form>
+    </div>
+    
+    <!-- Classes Grid -->
+    {% if classes %}
+    <div class="classes-grid">
+        {% for cls in classes %}
+        <div class="class-card {% if cls.id in attended_ids %}attended{% endif %}">
+            {% if cls.id in attended_ids %}
+            <div class="attended-badge">
+                <i class="fas fa-check-circle"></i> Attended
+            </div>
+            {% endif %}
+            <div class="class-card-header">
+                <span class="course-badge">{{ cls.course_code or cls.course_name[:3].upper() }}</span>
+                <span class="status-badge badge-{{ 'warning' if cls.status == 'ongoing' else 'info' }}">
+                    {{ cls.status.capitalize() }}
+                </span>
+            </div>
+            <div class="class-card-body">
+                <h3>{{ cls.course_name }}</h3>
+                <p class="class-section">Section {{ cls.section }}</p>
+                
+                <div class="class-info-list">
+                    <div class="info-row">
+                        <i class="fas fa-calendar"></i>
+                        <span>{{ cls.date.strftime('%A, %B %d, %Y') }}</span>
+                    </div>
+                    <div class="info-row">
+                        <i class="fas fa-clock"></i>
+                        <span>{{ cls.start_time.strftime('%I:%M %p') }} - {{ cls.end_time.strftime('%I:%M %p') }}</span>
+                    </div>
+                    <div class="info-row">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>{{ cls.room }}</span>
+                    </div>
+                </div>
+                
+                {% if cls.reason %}
+                <p class="class-reason"><strong>Reason:</strong> {{ cls.reason[:100] }}{% if cls.reason|length > 100 %}...{% endif %}</p>
+                {% endif %}
+            </div>
+            <div class="class-card-footer">
+                {% if cls.id not in attended_ids and cls.status == 'ongoing' %}
+                <a href="{{ url_for('student.mark_attendance') }}" class="btn btn-primary">
+                    <i class="fas fa-qrcode"></i> Mark Attendance
+                </a>
+                {% else %}
+                <a href="{{ url_for('student.class_detail', class_id=cls.id) }}" class="btn btn-outline">
+                    View Details
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body">
+            <div class="empty-state">
+                <i class="fas fa-calendar-times"></i>
+                <h3>No Upcoming Classes</h3>
+                <p>{% if course_filter or date_filter %}No classes match your filters{% else %}There are no scheduled make-up classes at the moment{% endif %}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+# Flask and Extensions
+Flask>=3.0.0
+Flask-SQLAlchemy>=3.1.0
+Flask-Login>=0.6.0
+Flask-Mail>=0.10.0
+Flask-WTF>=1.2.0
+Werkzeug>=3.0.0
+
+# Security
+python-dotenv>=1.0.0
+
+# Database
+SQLAlchemy>=2.0.0
+
+# Background Tasks
+APScheduler>=3.10.0
+
+# AI/ML
+scikit-learn>=1.4.0
+pandas>=2.0.0
+numpy>=1.26.0
+
+# QR Code Generation
+qrcode>=7.4.0
+Pillow>=10.0.0
+
+# Email
+email-validator>=2.1.0

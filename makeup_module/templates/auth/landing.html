@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - Make-Up Class System{% endblock %}
+
+{% block auth_content %}
+<div class="landing-page">
+    <div class="landing-hero">
+        <div class="hero-content">
+            <div class="hero-logo">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <h1>Make-Up Class System</h1>
+            <p class="hero-subtitle">Seamless scheduling and attendance management for remedial classes</p>
+            <div class="hero-features">
+                <div class="feature-item">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Easy Scheduling</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-qrcode"></i>
+                    <span>Quick Attendance</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Smart Analytics</span>
+                </div>
+            </div>
+            <div class="hero-buttons">
+                <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-outline btn-lg">
+                    <i class="fas fa-user-plus"></i> Register
+                </a>
+            </div>
+        </div>
+        <div class="hero-illustration">
+            <div class="floating-card card-1">
+                <i class="fas fa-book-open"></i>
+                <span>Schedule Classes</span>
+            </div>
+            <div class="floating-card card-2">
+                <i class="fas fa-users"></i>
+                <span>Track Attendance</span>
+            </div>
+            <div class="floating-card card-3">
+                <i class="fas fa-brain"></i>
+                <span>AI Predictions</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="landing-features-section">
+        <h2>Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <h3>For Faculty</h3>
+                <ul>
+                    <li>Schedule make-up classes easily</li>
+                    <li>Auto-generate unique remedial codes</li>
+                    <li>Track attendance in real-time</li>
+                    <li>AI-powered scheduling recommendations</li>
+                    <li>Export attendance reports</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h3>For Students</h3>
+                <ul>
+                    <li>View upcoming make-up classes</li>
+                    <li>Mark attendance with code/QR</li>
+                    <li>Track attendance history</li>
+                    <li>Receive instant notifications</li>
+                    <li>Download attendance reports</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h3>AI Integration</h3>
+                <ul>
+                    <li>Attendance prediction</li>
+                    <li>Class rush forecasting</li>
+                    <li>Smart scheduling suggestions</li>
+                    <li>Automated reminders</li>
+                    <li>Analytics dashboard</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

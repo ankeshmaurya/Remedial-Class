@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - Make-Up Class System{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="notifications-page">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-bell"></i> All Notifications</h3>
+            {% if notifications %}
+            <button class="btn btn-sm btn-outline" onclick="markAllRead()">
+                <i class="fas fa-check-double"></i> Mark All Read
+            </button>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if notifications %}
+            <div class="notification-list-full">
+                {% for notif in notifications %}
+                <div class="notification-item-full {% if not notif.is_read %}unread{% endif %}" data-id="{{ notif.id }}">
+                    <div class="notification-icon {% if notif.notification_type == 'class_scheduled' %}icon-info{% elif notif.notification_type == 'class_cancelled' %}icon-danger{% elif notif.notification_type == 'reminder' %}icon-warning{% else %}icon-primary{% endif %}">
+                        <i class="fas {% if notif.notification_type == 'class_scheduled' %}fa-calendar-plus{% elif notif.notification_type == 'class_cancelled' %}fa-calendar-times{% elif notif.notification_type == 'reminder' %}fa-bell{% elif notif.notification_type == 'code_active' %}fa-key{% else %}fa-info-circle{% endif %}"></i>
+                    </div>
+                    <div class="notification-body">
+                        <div class="notification-header">
+                            <h4>{{ notif.title }}</h4>
+                            <span class="notification-time">{{ notif.created_at.strftime('%b %d, %Y at %I:%M %p') }}</span>
+                        </div>
+                        <p class="notification-message">{{ notif.message }}</p>
+                        {% if notif.related_class %}
+                        <a href="{{ url_for('student.class_detail', class_id=notif.related_class_id) }}" class="notification-link">
+                            View Class <i class="fas fa-arrow-right"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% if not notif.is_read %}
+                    <button class="mark-read-btn" onclick="markRead({{ notif.id }})" title="Mark as read">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-bell-slash"></i>
+                <h3>No Notifications</h3>
+                <p>You're all caught up! Check back later for updates.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function markRead(notifId) {
+    fetch(`/student/notification/${notifId}/read`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const item = document.querySelector(`[data-id="${notifId}"]`);
+            item.classList.remove('unread');
+            item.querySelector('.mark-read-btn')?.remove();
+        }
+    });
+}
+
+function markAllRead() {
+    fetch('/student/notifications/mark-all-read', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.querySelectorAll('.notification-item-full.unread').forEach(item => {
+                item.classList.remove('unread');
+                item.querySelector('.mark-read-btn')?.remove();
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

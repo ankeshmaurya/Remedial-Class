@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance - Make-Up Class System{% endblock %}
+{% block page_title %}Attendance Overview{% endblock %}
+
+{% block content %}
+<div class="attendance-page">
+    <!-- Stats Overview -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ total_students }}</span>
+                <span class="stat-label">Total Records</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-success">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ total_present }}</span>
+                <span class="stat-label">Present</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-warning">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ total_late }}</span>
+                <span class="stat-label">Late</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-info">
+                <i class="fas fa-percentage"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ overall_pct }}%</span>
+                <span class="stat-label">Overall Rate</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Classes with Attendance -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-clipboard-list"></i> Class-wise Attendance</h3>
+        </div>
+        <div class="card-body">
+            {% if classes %}
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Course</th>
+                            <th>Date</th>
+                            <th>Total</th>
+                            <th>Present</th>
+                            <th>Late</th>
+                            <th>Rate</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cls in classes %}
+                        {% set stats = cls.get_attendance_stats() %}
+                        <tr>
+                            <td>
+                                <strong>{{ cls.course_name }}</strong>
+                                <small>Section {{ cls.section }}</small>
+                            </td>
+                            <td>{{ cls.date.strftime('%b %d, %Y') }}</td>
+                            <td>{{ stats.total }}</td>
+                            <td class="text-success">{{ stats.present }}</td>
+                            <td class="text-warning">{{ stats.late }}</td>
+                            <td>
+                                <div class="progress-bar-mini">
+                                    <div class="progress-fill" style="width: {{ stats.attendance_pct }}%"></div>
+                                    <span>{{ stats.attendance_pct }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('faculty.class_attendance', class_id=cls.id) }}" class="btn btn-sm btn-outline">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                <a href="{{ url_for('faculty.export_attendance', class_id=cls.id) }}" class="btn btn-sm btn-outline">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-clipboard"></i>
+                <h3>No Attendance Data</h3>
+                <p>Attendance records will appear here once classes are completed</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

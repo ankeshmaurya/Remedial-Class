@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Make-Up Class System{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <div class="profile-header">
+        <div class="profile-avatar">
+            <span>{{ current_user.name[0].upper() }}</span>
+        </div>
+        <div class="profile-info">
+            <h2>{{ current_user.name }}</h2>
+            <p>{{ current_user.email }}</p>
+            <span class="badge badge-{{ 'primary' if current_user.is_faculty() else 'success' }}">
+                {{ current_user.role.capitalize() }}
+            </span>
+        </div>
+    </div>
+    
+    <div class="profile-content">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-user-edit"></i> Edit Profile</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('auth.profile') }}" class="profile-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">Full Name</label>
+                            <input type="text" id="name" name="name" value="{{ current_user.name }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" value="{{ current_user.email }}" disabled>
+                            <small class="form-hint">Email cannot be changed</small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="department">Department</label>
+                            <input type="text" id="department" name="department" value="{{ current_user.department or '' }}" placeholder="Enter your department">
+                        </div>
+                        <div class="form-group">
+                            <label for="role">Role</label>
+                            <input type="text" id="role" value="{{ current_user.role.capitalize() }}" disabled>
+                        </div>
+                    </div>
+                    
+                    <div class="form-divider">
+                        <span>Change Password</span>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="current_password">Current Password</label>
+                            <input type="password" id="current_password" name="current_password" placeholder="Enter current password">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="new_password">New Password</label>
+                            <input type="password" id="new_password" name="new_password" placeholder="Enter new password" minlength="8">
+                            <small class="form-hint">Leave blank to keep current password</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm_password">Confirm New Password</label>
+                            <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm new password">
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-info-circle"></i> Account Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Account Created</label>
+                        <span>{{ current_user.created_at.strftime('%B %d, %Y') }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Account Status</label>
+                        <span class="badge badge-{{ 'success' if current_user.is_active else 'danger' }}">
+                            {{ 'Active' if current_user.is_active else 'Inactive' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
